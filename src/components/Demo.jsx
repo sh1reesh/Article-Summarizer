@@ -9,15 +9,12 @@ const Demo = () => {
   });
   const [allArticles, setAllArticles] = useState([]);
   const [copied, setCopied] = useState('');
-  const [copiedSummary, setCopiedSummary] = useState(''); // New state for summary copy
+  const [copiedSummary, setCopiedSummary] = useState('');
 
   const [getSummary, { error, isFetching }] = useLazyGetSummaryQuery();
 
   useEffect(() => {
-    const articlesFromLocalStorage = JSON.parse(
-      localStorage.getItem('articles') || '[]' // Ensure it handles null
-    );
-
+    const articlesFromLocalStorage = JSON.parse(localStorage.getItem('articles') || '[]');
     if (articlesFromLocalStorage.length > 0) {
       setAllArticles(articlesFromLocalStorage);
     }
@@ -26,17 +23,21 @@ const Demo = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const { data } = await getSummary({ articleUrl: article.url });
+    try {
+      const { data } = await getSummary({ articleUrl: article.url });
+      console.log('API response:', data); // Debugging
 
-    if (data?.summary) {
-      const newArticle = { ...article, summary: data.summary };
+      if (data?.summary) {
+        const newArticle = { ...article, summary: data.summary };
+        const updatedAllArticles = [newArticle, ...allArticles];
 
-      const updatedAllArticles = [newArticle, ...allArticles];
+        setArticle(newArticle);
+        setAllArticles(updatedAllArticles);
 
-      setArticle(newArticle);
-      setAllArticles(updatedAllArticles);
-
-      localStorage.setItem('articles', JSON.stringify(updatedAllArticles));
+        localStorage.setItem('articles', JSON.stringify(updatedAllArticles));
+      }
+    } catch (error) {
+      console.error('Error fetching summary:', error);
     }
   };
 
@@ -44,14 +45,14 @@ const Demo = () => {
     navigator.clipboard.writeText(url);
     setCopied(url);
 
-    setTimeout(() => setCopied(''), 3000); // Clear copied state after 3 seconds
+    setTimeout(() => setCopied(''), 3000);
   };
 
   const handleCopySummary = (summary) => {
     navigator.clipboard.writeText(summary);
-    setCopiedSummary('summary'); // Set state to give feedback
+    setCopiedSummary('summary');
 
-    setTimeout(() => setCopiedSummary(''), 3000); // Clear copied state after 3 seconds
+    setTimeout(() => setCopiedSummary(''), 3000);
   };
 
   return (
@@ -103,7 +104,7 @@ const Demo = () => {
             Well, that wasn't supposed to happen...
             <br />
             <span className='font-satoshi font-normal text-gray-700'>
-              {error?.data?.error}
+              {error?.data?.error || error.message || 'Unknown error'}
             </span>
           </p>
         ) : (
